@@ -29,6 +29,9 @@
   <button onclick="tomarFoto()">📸 Tomar foto y verificar</button>
   <p id="estado"></p>
 
+  <!-- Carga config.js primero para que apiKey esté disponible -->
+  <script src="config.js"></script>
+
   <script>
     const endpoint = "https://reconocimientoformsmeli.cognitiveservices.azure.com";
     const imageBaseURL = "https://drive.google.com/uc?export=view&id=1y0nWsgmmHOUPmXdC30aY41BGcNre0TOG";
@@ -117,8 +120,5 @@
       return await response.json();
     }
   </script>
-
-  <!-- Cargar la clave desde archivo local -->
-  <script src="config.js"></script>
 </body>
 </html>
