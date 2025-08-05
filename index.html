@@ -29,11 +29,10 @@
   <button onclick="tomarFoto()">📸 Tomar foto y verificar</button>
   <p id="estado"></p>
 
-  <!-- Carga config.js primero para que apiKey esté disponible -->
+  <!-- CARGAR CONFIG PRIMERO -->
   <script src="config.js"></script>
 
   <script>
-    const endpoint = "https://reconocimientoformsmeli.cognitiveservices.azure.com";
     const imageBaseURL = "https://drive.google.com/uc?export=view&id=1y0nWsgmmHOUPmXdC30aY41BGcNre0TOG";
     const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSfCRh4osLnTgyxpHQeB9chKZZAVXNeAIlfugGj0GDTm7ojE6g/viewform";
 
@@ -41,7 +40,7 @@
     const canvas = document.getElementById("canvas");
     const estado = document.getElementById("estado");
 
-    // Activar la cámara
+    // Activar cámara
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
@@ -52,8 +51,6 @@
 
     async function tomarFoto() {
       estado.innerText = "Procesando rostro...";
-
-      // Captura la imagen del video
       const context = canvas.getContext("2d");
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
@@ -88,7 +85,6 @@
         },
         body: blob
       });
-
       const data = await response.json();
       return data[0]?.faceId;
     }
@@ -102,7 +98,6 @@
         },
         body: JSON.stringify({ url: imageUrl })
       });
-
       const data = await response.json();
       return data[0]?.faceId;
     }
@@ -116,7 +111,6 @@
         },
         body: JSON.stringify({ faceId1, faceId2 })
       });
-
       return await response.json();
     }
   </script>
