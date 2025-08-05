@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Verificación Facial</title>
+</head>
+<body>
+  <h2>Sube tu foto para verificar tu identidad</h2>
+  <input type="file" id="userImage" accept="image/*">
+  <br><br>
+  <button onclick="verificarRostro()">Verificar</button>
+  <p id="estado"></p>
+
+  <script>
+    const apiKey = "FAKE"; // ← Reemplaza esto por tu API real
+    const endpoint = "https://reconocimientoformsmeli.cognitiveservices.azure.com";
+    const imageBaseURL = "https://drive.google.com/uc?export=view&id=1y0nWsgmmHOUPmXdC30aY41BGcNre0TOG";
+    const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSfCRh4osLnTgyxpHQeB9chKZZAVXNeAIlfugGj0GDTm7ojE6g/viewform";
+
+    async function verificarRostro() {
+      const estado = document.getElementById("estado");
+      estado.innerText = "Verificando rostro...";
+
+      const fileInput = document.getElementById("userImage");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        estado.innerText = "Por favor, selecciona una imagen.";
+        return;
+      }
+
+      const userFaceId = await detectarRostro(file);
+      if (!userFaceId) {
+        estado.innerText = "❌ No se detectó rostro en tu imagen.";
+        return;
+      }
+
+      const baseFaceId = await detectarRostroDesdeURL(imageBaseURL);
+      if (!baseFaceId) {
+        estado.innerText = "❌ Error al cargar imagen de referencia.";
+        return;
+      }
+
+      const resultado = await compararFaces(userFaceId, baseFaceId);
+      if (resultado && resultado.confidence > 0.7) {
+        estado.innerText = "✅ Rostro verificado. Redirigiendo...";
+        setTimeout(() => window.location.href = formURL, 2000);
+      } else {
+        estado.innerText = "❌ Rostro no coincide. Acceso denegado.";
+      }
+    }
+
+    async function detectarRostro(file) {
+      const response = await fetch(`${endpoint}/face/v1.0/detect?returnFaceId=true`, {
+        method: "POST",
+        headers: {
+          "Ocp-Apim-Subscription-Key": apiKey,
+          "Content-Type": "application/octet-stream"
+        },
+        body: await file.arrayBuffer()
+      });
+
+      const data = await response.json();
+      return data[0]?.faceId;
+    }
+
+    async function detectarRostroDesdeURL(imageUrl) {
+      const response = await fetch(`${endpoint}/face/v1.0/detect?returnFaceId=true`, {
+        method: "POST",
+        headers: {
+          "Ocp-Apim-Subscription-Key": apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ url: imageUrl })
+      });
+
+      const data = await response.json();
+      return data[0]?.faceId;
+    }
+
+    async function compararFaces(faceId1, faceId2) {
+      const response = await fetch(`${endpoint}/face/v1.0/verify`, {
+        method: "POST",
+        headers: {
+          "Ocp-Apim-Subscription-Key": apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ faceId1, faceId2 })
+      });
+
+      return await response.json();
+    }
+  </script>
+</body>
+</html>
