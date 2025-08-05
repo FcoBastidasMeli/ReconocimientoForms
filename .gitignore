@@ -1,0 +1,7 @@
+# Ignorar archivo que contiene la API Key
+config.js
+
+# Opcional: ignorar backups o archivos temporales
+*.log
+.DS_Store
+node_modules/

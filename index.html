@@ -2,36 +2,62 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Verificación Facial</title>
+  <title>Verificación Facial con Cámara</title>
+  <style>
+    video, canvas {
+      display: block;
+      margin: 0 auto 15px;
+      max-width: 100%;
+    }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    p {
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <h2>Sube tu foto para verificar tu identidad</h2>
-  <input type="file" id="userImage" accept="image/*">
-  <br><br>
-  <button onclick="verificarRostro()">Verificar</button>
+  <h2 style="text-align:center">Verifica tu rostro en vivo</h2>
+
+  <video id="video" autoplay playsinline width="320" height="240"></video>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+  <button onclick="tomarFoto()">📸 Tomar foto y verificar</button>
   <p id="estado"></p>
 
   <script>
-    const apiKey = "FAKE"; // ← Reemplaza esto por tu API real
     const endpoint = "https://reconocimientoformsmeli.cognitiveservices.azure.com";
     const imageBaseURL = "https://drive.google.com/uc?export=view&id=1y0nWsgmmHOUPmXdC30aY41BGcNre0TOG";
     const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSfCRh4osLnTgyxpHQeB9chKZZAVXNeAIlfugGj0GDTm7ojE6g/viewform";
 
-    async function verificarRostro() {
-      const estado = document.getElementById("estado");
-      estado.innerText = "Verificando rostro...";
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const estado = document.getElementById("estado");
 
-      const fileInput = document.getElementById("userImage");
-      const file = fileInput.files[0];
+    // Activar la cámara
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        estado.innerText = "Error al acceder a la cámara: " + err;
+      });
 
-      if (!file) {
-        estado.innerText = "Por favor, selecciona una imagen.";
-        return;
-      }
+    async function tomarFoto() {
+      estado.innerText = "Procesando rostro...";
 
-      const userFaceId = await detectarRostro(file);
+      // Captura la imagen del video
+      const context = canvas.getContext("2d");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+
+      const userFaceId = await detectarRostro(blob);
       if (!userFaceId) {
-        estado.innerText = "❌ No se detectó rostro en tu imagen.";
+        estado.innerText = "❌ No se detectó rostro en la foto.";
         return;
       }
 
@@ -50,14 +76,14 @@
       }
     }
 
-    async function detectarRostro(file) {
+    async function detectarRostro(blob) {
       const response = await fetch(`${endpoint}/face/v1.0/detect?returnFaceId=true`, {
         method: "POST",
         headers: {
           "Ocp-Apim-Subscription-Key": apiKey,
           "Content-Type": "application/octet-stream"
         },
-        body: await file.arrayBuffer()
+        body: blob
       });
 
       const data = await response.json();
@@ -91,5 +117,8 @@
       return await response.json();
     }
   </script>
+
+  <!-- Cargar la clave desde archivo local -->
+  <script src="config.js"></script>
 </body>
 </html>
